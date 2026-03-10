@@ -140,53 +140,47 @@
   }
 
   async function submitToFlow() {
-    try {
-      const body = {
-        action,
-        input_unique_id:        unique_id,
-        input_kpk:              kpk,
-        input_employee_name:    employee_name,
-        input_employee_email:   employee_email,
-        input_employee_fname:   employee_fname,
-        input_leave_type:       leave_type,
-        input_start_date:       start_date,
-        input_end_date:         end_date,
-        input_actual_uses:      actual_uses,
-        input_address:          address,
-        input_reason:           reason,
-        input_superior_1_name:  sup1_name,
-        input_superior_1_email: sup1_email,
-        input_superior_1_fname: sup1_fname,
-        input_superior_2_kpk:   sup2_kpk,
-        input_superior_2_name:  sup2_name,
-        input_superior_2_email: sup2_email,
-        input_superior_2_fname: sup2_fname,
-        input_file_upload:      file_upload,
-        declined_by:            whoDeclined
-      };
+    const body = JSON.stringify({
+      action,
+      input_unique_id:        unique_id,
+      input_kpk:              kpk,
+      input_employee_name:    employee_name,
+      input_employee_email:   employee_email,
+      input_employee_fname:   employee_fname,
+      input_leave_type:       leave_type,
+      input_start_date:       start_date,
+      input_end_date:         end_date,
+      input_actual_uses:      actual_uses,
+      input_address:          address,
+      input_reason:           reason,
+      input_superior_1_name:  sup1_name,
+      input_superior_1_email: sup1_email,
+      input_superior_1_fname: sup1_fname,
+      input_superior_2_kpk:   sup2_kpk,
+      input_superior_2_name:  sup2_name,
+      input_superior_2_email: sup2_email,
+      input_superior_2_fname: sup2_fname,
+      input_file_upload:      file_upload,
+      declined_by:            whoDeclined
+    });
 
-      // Pakai no-cors agar tidak kena CORS block dari Power Automate
-      // Response akan selalu 'opaque' tapi flow tetap dijalankan di server
-      await fetch(FLOW2_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+    // Kirim ke Power Automate tanpa await response
+    // Flow tetap jalan di server meskipun CORS block response-nya
+    fetch(FLOW2_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body
+    }).catch(() => {});
+    // ↑ .catch kosong = abaikan CORS error, flow sudah triggered
 
-      // no-cors tidak bisa baca response, langsung tampilkan sukses
+    // Tunggu 2 detik supaya flow sempat diterima server
+    // lalu langsung tampilkan sukses tanpa tunggu response
+    setTimeout(() => {
       showSuccess();
-
-    } catch (err) {
-      // Kalau masih error, tetap tampilkan sukses
-      // karena DB sudah terupdate di server
-      console.log('Note:', err.message);
-      showSuccess();
-    }
+    }, 2000);
   }
 
   submitToFlow();
 </script>
 </body>
 </html>
-

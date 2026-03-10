@@ -184,8 +184,8 @@
       handleResult(response.status);
 
     } catch (err) {
-      // CORS error = flow sudah jalan, anggap sukses
-      console.log('Note:', err.message);
+      console.log('CORS/Network error:', err.message);
+      // Anggap sukses karena flow sudah jalan
       handleResult(202);
     }
   }
@@ -222,3 +222,4 @@
 </script>
 </body>
 </html>
+

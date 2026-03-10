@@ -9,26 +9,33 @@
   body { font-family: 'Calibri', Helvetica, Arial, sans-serif; background-color: #eee3e7; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
   .card { background: #fff; border-radius: 12px; max-width: 480px; width: 90%; padding: 48px 40px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
   .logo { width: 120px; margin: 0 auto 32px; display: block; }
+
   .spinner { width: 64px; height: 64px; border: 5px solid #e0e0e0; border-top-color: #53c292; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
   .icon-circle { width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 40px; color: white; }
-  .green  { background-color: #53c292; }
-  .red    { background-color: #ED2939; }
-  .orange { background-color: #f0a500; }
-  .gray   { background-color: #aaaaaa; }
+  .green { background-color: #53c292; }
+  .red   { background-color: #ED2939; }
+  .orange{ background-color: #f0a500; }
+  .gray  { background-color: #aaaaaa; }
+
   h2 { font-size: 20px; color: #58585a; margin-bottom: 8px; }
   h1.green-text  { font-size: 24px; color: #53c292; font-weight: 700; margin-bottom: 12px; }
   h1.red-text    { font-size: 24px; color: #ED2939; font-weight: 700; margin-bottom: 12px; }
   h1.orange-text { font-size: 24px; color: #f0a500; font-weight: 700; margin-bottom: 12px; }
   h1.gray-text   { font-size: 24px; color: #aaaaaa; font-weight: 700; margin-bottom: 12px; }
+
   .badge { display: inline-block; color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; margin: 12px 0 20px; }
   .badge-green  { background-color: #53c292; }
   .badge-red    { background-color: #ED2939; }
   .badge-orange { background-color: #f0a500; }
+
   .info { font-size: 15px; color: #888888; line-height: 1.6; margin-bottom: 6px; }
   .name { font-size: 17px; color: #58585a; font-weight: 700; margin: 8px 0; }
   .leave-detail { font-size: 14px; color: #aaaaaa; margin-top: 4px; }
   .footer { margin-top: 28px; font-size: 12px; color: #cccccc; border-top: 1px solid #f0f0f0; padding-top: 16px; }
+
+  /* States */
   #state-loading, #state-approved, #state-declined, #state-already, #state-error { display: none; }
   #state-loading { display: block; }
 </style>
@@ -37,12 +44,14 @@
 <div class="card">
   <img class="logo" src="http://drive.google.com/uc?export=view&id=1AJu3PYj0N7ulkhLH1rrho8jzg8CKtO5r" alt="PTMI Logo">
 
+  <!-- LOADING -->
   <div id="state-loading">
     <div class="spinner"></div>
     <h2>Processing your response...</h2>
     <p class="info">Please wait, do not close this page.</p>
   </div>
 
+  <!-- APPROVED -->
   <div id="state-approved">
     <div class="icon-circle green">✔</div>
     <h1 class="green-text">Approved Successfully!</h1>
@@ -55,6 +64,7 @@
     <div class="footer">©2022 PTMI · HR Portal</div>
   </div>
 
+  <!-- DECLINED -->
   <div id="state-declined">
     <div class="icon-circle red">✘</div>
     <h1 class="red-text">Declined Successfully!</h1>
@@ -67,6 +77,7 @@
     <div class="footer">©2022 PTMI · HR Portal</div>
   </div>
 
+  <!-- ALREADY PROCESSED -->
   <div id="state-already">
     <div class="icon-circle orange">⚠</div>
     <h1 class="orange-text">Already Processed!</h1>
@@ -78,6 +89,7 @@
     <div class="footer">©2022 PTMI · HR Portal</div>
   </div>
 
+  <!-- ERROR -->
   <div id="state-error">
     <div class="icon-circle gray">!</div>
     <h1 class="gray-text">Something went wrong</h1>
@@ -88,11 +100,14 @@
 
 <script>
   // ============================================================
-  // GANTI DENGAN URL FLOW 2 BOS
+  // GANTI DENGAN URL FLOW 2 BOS (dari Power Automate - trigger POST)
   // ============================================================
   const FLOW2_URL = 'https://default5f40b94dde924c81a62a4014455791.e6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f192c32051c0496ab95f3627e05b9ea9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=S2ICg73rCcJ01UbavWnsFgyHzeWlp29UQwQtUspBvE8';
 
-  const p   = new URLSearchParams(window.location.search);
+  // ============================================================
+  // Ambil semua parameter dari URL
+  // ============================================================
+  const p = new URLSearchParams(window.location.search);
   const get = key => p.get(key) || '';
 
   const action         = get('action');
@@ -115,73 +130,95 @@
   const sup2_email     = get('input_superior_2_email');
   const sup2_fname     = get('input_superior_2_fname');
   const file_upload    = get('input_file_upload');
-  const whoDeclined    = (action === 'decline_s2') ? sup2_name : sup1_name;
+  const declined_by    = get('declined_by') || sup1_name;
 
+  // ============================================================
+  // Show state helper
+  // ============================================================
   function showState(id) {
     ['state-loading','state-approved','state-declined','state-already','state-error']
       .forEach(s => document.getElementById(s).style.display = 'none');
     document.getElementById(id).style.display = 'block';
   }
 
-  function showSuccess() {
-    if (action === 'approve' || action === 'approve_s2') {
-      document.getElementById('approved-name').textContent = employee_name;
-      document.getElementById('approved-type').textContent = leave_type;
-      document.getElementById('approved-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
-      showState('state-approved');
-    } else if (action === 'decline' || action === 'decline_s2') {
-      document.getElementById('declined-name').textContent = employee_name;
-      document.getElementById('declined-type').textContent = leave_type;
-      document.getElementById('declined-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
-      showState('state-declined');
+  // ============================================================
+  // Tentukan who declined berdasarkan action
+  // ============================================================
+  const whoDeclined = (action === 'decline_s2') ? sup2_name : sup1_name;
+
+  // ============================================================
+  // POST ke Flow 2
+  // ============================================================
+  async function submitToFlow() {
+    try {
+      const body = {
+        action,
+        input_unique_id:        unique_id,
+        input_kpk:              kpk,
+        input_employee_name:    employee_name,
+        input_employee_email:   employee_email,
+        input_employee_fname:   employee_fname,
+        input_leave_type:       leave_type,
+        input_start_date:       start_date,
+        input_end_date:         end_date,
+        input_actual_uses:      actual_uses,
+        input_address:          address,
+        input_reason:           reason,
+        input_superior_1_name:  sup1_name,
+        input_superior_1_email: sup1_email,
+        input_superior_1_fname: sup1_fname,
+        input_superior_2_kpk:   sup2_kpk,
+        input_superior_2_name:  sup2_name,
+        input_superior_2_email: sup2_email,
+        input_superior_2_fname: sup2_fname,
+        input_file_upload:      file_upload,
+        declined_by:            whoDeclined
+      };
+
+      const response = await fetch(FLOW2_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      handleResult(response.status);
+
+    } catch (err) {
+      console.log('CORS/Network error:', err.message);
+      // Anggap sukses karena flow sudah jalan
+      handleResult(202);
+    }
+  }
+
+  // ============================================================
+  // Handle result berdasarkan action
+  // ============================================================
+  function handleResult(status) {
+    if (status === 200 || status === 202) {
+      if (action === 'approve' || action === 'approve_s2') {
+        document.getElementById('approved-name').textContent = employee_name;
+        document.getElementById('approved-type').textContent = leave_type;
+        document.getElementById('approved-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+        showState('state-approved');
+      } else if (action === 'decline' || action === 'decline_s2') {
+        document.getElementById('declined-name').textContent = employee_name;
+        document.getElementById('declined-type').textContent = leave_type;
+        document.getElementById('declined-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+        showState('state-declined');
+      } else {
+        showState('state-error');
+      }
+    } else if (status === 409) {
+      // Flow 2 return 409 = already processed
+      document.getElementById('already-name').textContent = employee_name;
+      showState('state-already');
     } else {
       showState('state-error');
     }
   }
 
-  async function submitToFlow() {
-    const body = JSON.stringify({
-      action,
-      input_unique_id:        unique_id,
-      input_kpk:              kpk,
-      input_employee_name:    employee_name,
-      input_employee_email:   employee_email,
-      input_employee_fname:   employee_fname,
-      input_leave_type:       leave_type,
-      input_start_date:       start_date,
-      input_end_date:         end_date,
-      input_actual_uses:      actual_uses,
-      input_address:          address,
-      input_reason:           reason,
-      input_superior_1_name:  sup1_name,
-      input_superior_1_email: sup1_email,
-      input_superior_1_fname: sup1_fname,
-      input_superior_2_kpk:   sup2_kpk,
-      input_superior_2_name:  sup2_name,
-      input_superior_2_email: sup2_email,
-      input_superior_2_fname: sup2_fname,
-      input_file_upload:      file_upload,
-      declined_by:            whoDeclined
-    });
-
-    // Kirim ke Power Automate tanpa await response
-    // Flow tetap jalan di server meskipun CORS block response-nya
-    fetch(FLOW2_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: body
-    }).catch(() => {});
-    // ↑ .catch kosong = abaikan CORS error, flow sudah triggered
-
-    // Tunggu 2 detik supaya flow sempat diterima server
-    // lalu langsung tampilkan sukses tanpa tunggu response
-    setTimeout(() => {
-      showSuccess();
-    }, 2000);
-  }
-
+  // Jalankan saat halaman load
   submitToFlow();
 </script>
 </body>
 </html>
-

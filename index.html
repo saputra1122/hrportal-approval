@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR Portal - Processing...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Calibri', Helvetica, Arial, sans-serif; background-color: #eee3e7; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .card { background: #fff; border-radius: 12px; max-width: 480px; width: 90%; padding: 48px 40px; text-align: center; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .logo { width: 120px; margin: 0 auto 32px; display: block; }
+
+  /* LOADING STATE */
+  #state-loading { display: block; }
+  .spinner { width: 64px; height: 64px; border: 5px solid #e0e0e0; border-top-color: #53c292; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 24px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #state-loading h2 { font-size: 20px; color: #58585a; margin-bottom: 8px; }
+  #state-loading p { font-size: 14px; color: #aaaaaa; }
+
+  /* APPROVED STATE */
+  #state-approved { display: none; border-top: 5px solid #53c292; border-radius: 12px; margin: -48px -40px; padding: 48px 40px; }
+  #state-approved .icon { width: 80px; height: 80px; background-color: #53c292; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 40px; color: white; }
+  #state-approved h1 { font-size: 24px; color: #53c292; font-weight: 700; margin-bottom: 12px; }
+  #state-approved .badge { display: inline-block; background-color: #53c292; color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; margin: 12px 0 20px; }
+
+  /* DECLINED STATE */
+  #state-declined { display: none; border-top: 5px solid #ED2939; border-radius: 12px; margin: -48px -40px; padding: 48px 40px; }
+  #state-declined .icon { width: 80px; height: 80px; background-color: #ED2939; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 40px; color: white; }
+  #state-declined h1 { font-size: 24px; color: #ED2939; font-weight: 700; margin-bottom: 12px; }
+  #state-declined .badge { display: inline-block; background-color: #ED2939; color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; margin: 12px 0 20px; }
+
+  /* ALREADY PROCESSED STATE */
+  #state-already { display: none; border-top: 5px solid #f0a500; border-radius: 12px; margin: -48px -40px; padding: 48px 40px; }
+  #state-already .icon { width: 80px; height: 80px; background-color: #f0a500; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 40px; color: white; }
+  #state-already h1 { font-size: 24px; color: #f0a500; font-weight: 700; margin-bottom: 12px; }
+  #state-already .badge { display: inline-block; background-color: #f0a500; color: #fff; padding: 4px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; margin: 12px 0 20px; }
+
+  /* ERROR STATE */
+  #state-error { display: none; border-top: 5px solid #aaaaaa; border-radius: 12px; margin: -48px -40px; padding: 48px 40px; }
+  #state-error .icon { width: 80px; height: 80px; background-color: #aaaaaa; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px; font-size: 40px; color: white; }
+  #state-error h1 { font-size: 24px; color: #aaaaaa; font-weight: 700; margin-bottom: 12px; }
+
+  /* SHARED */
+  .info { font-size: 15px; color: #888888; line-height: 1.6; margin-bottom: 6px; }
+  .name { font-size: 17px; color: #58585a; font-weight: 700; margin: 8px 0; }
+  .leave-info { font-size: 14px; color: #aaaaaa; margin-top: 4px; }
+  .footer { margin-top: 28px; font-size: 12px; color: #cccccc; border-top: 1px solid #f0f0f0; padding-top: 16px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <img class="logo" src="http://drive.google.com/uc?export=view&id=1AJu3PYj0N7ulkhLH1rrho8jzg8CKtO5r" alt="PTMI Logo">
+
+  <!-- LOADING -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <h2>Processing your response...</h2>
+    <p>Please wait, do not close this page.</p>
+  </div>
+
+  <!-- APPROVED -->
+  <div id="state-approved">
+    <div class="icon">✔</div>
+    <h1>Approved Successfully!</h1>
+    <div class="badge">✔ APPROVED</div>
+    <p class="info">You have approved the leave request from</p>
+    <p class="name" id="approved-name"></p>
+    <p class="leave-info" id="approved-type"></p>
+    <p class="leave-info" id="approved-date"></p>
+    <p class="info" style="margin-top:16px;">An email notification has been sent to the employee.</p>
+    <div class="footer">©2022 PTMI · HR Portal</div>
+  </div>
+
+  <!-- DECLINED -->
+  <div id="state-declined">
+    <div class="icon">✘</div>
+    <h1>Declined Successfully!</h1>
+    <div class="badge">✘ DECLINED</div>
+    <p class="info">You have declined the leave request from</p>
+    <p class="name" id="declined-name"></p>
+    <p class="leave-info" id="declined-type"></p>
+    <p class="leave-info" id="declined-date"></p>
+    <p class="info" style="margin-top:16px;">An email notification has been sent to the employee.</p>
+    <div class="footer">©2022 PTMI · HR Portal</div>
+  </div>
+
+  <!-- ALREADY PROCESSED -->
+  <div id="state-already">
+    <div class="icon">⚠</div>
+    <h1>Already Processed!</h1>
+    <div class="badge">⚠ ALREADY PROCESSED</div>
+    <p class="info">This leave request from</p>
+    <p class="name" id="already-name"></p>
+    <p class="info">has already been processed before.</p>
+    <p class="info" style="margin-top:8px;font-size:13px;color:#aaaaaa;">No further action is needed.</p>
+    <div class="footer">©2022 PTMI · HR Portal</div>
+  </div>
+
+  <!-- ERROR -->
+  <div id="state-error">
+    <div class="icon">!</div>
+    <h1>Something went wrong</h1>
+    <p class="info" style="margin-top:8px;">Please try again or contact HR Administrator.</p>
+    <div class="footer">©2022 PTMI · HR Portal</div>
+  </div>
+
+</div>
+
+<script>
+  // ============================================================
+  // Ambil semua parameter dari URL query string
+  // ============================================================
+  const params = new URLSearchParams(window.location.search);
+  const action          = params.get('action')               || '';
+  const unique_id       = params.get('input_unique_id')      || '';
+  const employee_name   = params.get('input_employee_name')  || '';
+  const employee_email  = params.get('input_employee_email') || '';
+  const employee_fname  = params.get('input_employee_fname') || '';
+  const leave_type      = params.get('input_leave_type')     || '';
+  const start_date      = params.get('input_start_date')     || '';
+  const end_date        = params.get('input_end_date')       || '';
+  const actual_uses     = params.get('input_actual_uses')    || '';
+  const address         = params.get('input_address')        || '';
+  const reason          = params.get('input_reason')         || '';
+  const kpk             = params.get('input_kpk')            || '';
+  const sup1_name       = params.get('input_superior_1_name')  || '';
+  const sup1_email      = params.get('input_superior_1_email') || '';
+  const sup1_fname      = params.get('input_superior_1_fname') || '';
+  const sup2_kpk        = params.get('input_superior_2_kpk')   || '';
+  const sup2_name       = params.get('input_superior_2_name')  || '';
+  const sup2_email      = params.get('input_superior_2_email') || '';
+  const sup2_fname      = params.get('input_superior_2_fname') || '';
+  const file_upload     = params.get('input_file_upload')    || '';
+  const declined_by     = params.get('declined_by')          || sup1_name;
+
+  // ============================================================
+  // GANTI DENGAN URL FLOW 2 YANG SEBENARNYA
+  // ============================================================
+  const FLOW2_URL = 'FLOW2_DIRECT_URL_HERE';
+
+  // ============================================================
+  // Show/Hide state helper
+  // ============================================================
+  function showState(stateId) {
+    ['state-loading','state-approved','state-declined','state-already','state-error']
+      .forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById(stateId).style.display = 'block';
+  }
+
+  // ============================================================
+  // POST ke Flow 2 dengan semua data
+  // ============================================================
+  async function submitToFlow() {
+    try {
+      const body = {
+        action,
+        input_unique_id:       unique_id,
+        input_kpk:             kpk,
+        input_employee_name:   employee_name,
+        input_employee_email:  employee_email,
+        input_employee_fname:  employee_fname,
+        input_leave_type:      leave_type,
+        input_start_date:      start_date,
+        input_end_date:        end_date,
+        input_actual_uses:     actual_uses,
+        input_address:         address,
+        input_reason:          reason,
+        input_superior_1_name:  sup1_name,
+        input_superior_1_email: sup1_email,
+        input_superior_1_fname: sup1_fname,
+        input_superior_2_kpk:   sup2_kpk,
+        input_superior_2_name:  sup2_name,
+        input_superior_2_email: sup2_email,
+        input_superior_2_fname: sup2_fname,
+        input_file_upload:      file_upload,
+        declined_by:            declined_by
+      };
+
+      const response = await fetch(FLOW2_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      // Cek response dari Flow 2
+      const text = await response.text();
+
+      if (response.status === 200 || response.status === 202) {
+
+        // Cek apakah Flow 2 return "already_processed"
+        if (text.includes('already_processed')) {
+          document.getElementById('already-name').textContent = employee_name;
+          showState('state-already');
+
+        } else if (action === 'approve') {
+          document.getElementById('approved-name').textContent = employee_name;
+          document.getElementById('approved-type').textContent = leave_type;
+          document.getElementById('approved-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+          showState('state-approved');
+
+        } else if (action === 'decline') {
+          document.getElementById('declined-name').textContent = employee_name;
+          document.getElementById('declined-type').textContent = leave_type;
+          document.getElementById('declined-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+          showState('state-declined');
+        }
+
+      } else {
+        showState('state-error');
+      }
+
+    } catch (err) {
+      // Kalau CORS error (Flow 2 tidak return response) — 
+      // anggap sukses karena flow sudah jalan
+      if (action === 'approve') {
+        document.getElementById('approved-name').textContent = employee_name;
+        document.getElementById('approved-type').textContent = leave_type;
+        document.getElementById('approved-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+        showState('state-approved');
+      } else if (action === 'decline') {
+        document.getElementById('declined-name').textContent = employee_name;
+        document.getElementById('declined-type').textContent = leave_type;
+        document.getElementById('declined-date').textContent = start_date + ' - ' + end_date + ' (' + actual_uses + ' day(s))';
+        showState('state-declined');
+      } else {
+        showState('state-error');
+      }
+    }
+  }
+
+  // Jalankan saat halaman load
+  submitToFlow();
+</script>
+</body>
+</html>

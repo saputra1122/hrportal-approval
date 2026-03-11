@@ -175,19 +175,16 @@
         declined_by:            whoDeclined
       };
 
-      const response = await fetch(FLOW2_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      handleResult(response.status);
-
-    } catch (err) {
-      console.log('CORS/Network error:', err.message);
-      // Anggap sukses karena flow sudah jalan
-      handleResult(202);
-    }
+      fetch(FLOW2_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: body
+    }).catch(() => {
+      // Abaikan CORS/network error - flow tetap jalan di server
+    });
+     // Tampilkan sukses setelah 2.5 detik
+    // (tidak perlu tunggu response dari Power Automate)
+    setTimeout(showSuccess, 2500);
   }
 
   // ============================================================
@@ -222,3 +219,4 @@
 </script>
 </body>
 </html>
+

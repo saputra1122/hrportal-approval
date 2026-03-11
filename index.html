@@ -15,7 +15,6 @@
   .green  { background-color: #53c292; }
   .red    { background-color: #ED2939; }
   .orange { background-color: #f0a500; }
-  .gray   { background-color: #aaaaaa; }
   h2 { font-size: 20px; color: #58585a; margin-bottom: 8px; }
   h1.green-text  { font-size: 24px; color: #53c292; font-weight: 700; margin-bottom: 12px; }
   h1.red-text    { font-size: 24px; color: #ED2939; font-weight: 700; margin-bottom: 12px; }
@@ -80,10 +79,18 @@
 
 <script>
   // ============================================================
-  // GANTI DENGAN URL FLOW 2 BOS
+  // URL FLOW 2 → Handle Approve/Decline dari Superior 1
   // ============================================================
   const FLOW2_URL = 'https://default5f40b94dde924c81a62a4014455791.e6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/f192c32051c0496ab95f3627e05b9ea9/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=S2ICg73rCcJ01UbavWnsFgyHzeWlp29UQwQtUspBvE8';
 
+  // ============================================================
+  // URL FLOW 3 → Handle Approve/Decline dari Superior 2
+  // ============================================================
+  const FLOW3_URL = 'https://default5f40b94dde924c81a62a4014455791.e6.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/ee3144a932434019867f9e376a628b61/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=FIpxO3nEQiRhDowmHl0ace7tqJRXbgDqlIT18yE4op8';
+
+  // ============================================================
+  // Ambil semua parameter dari URL
+  // ============================================================
   const p   = new URLSearchParams(window.location.search);
   const get = key => p.get(key) || '';
 
@@ -108,6 +115,15 @@
   const sup2_fname     = get('input_superior_2_fname');
   const file_upload    = get('input_file_upload');
   const whoDeclined    = (action === 'decline_s2') ? sup2_name : sup1_name;
+
+  // ============================================================
+  // Tentukan Flow URL berdasarkan action
+  // approve / decline      → Flow 2 (Superior 1)
+  // approve_s2 / decline_s2 → Flow 3 (Superior 2)
+  // ============================================================
+  const TARGET_URL = (action === 'approve_s2' || action === 'decline_s2')
+    ? FLOW3_URL
+    : FLOW2_URL;
 
   function showState(id) {
     ['state-loading','state-approved','state-declined','state-already']
@@ -154,19 +170,34 @@
       declined_by:            whoDeclined
     });
 
-    // Kirim ke Power Automate - tidak perlu tunggu response
-    // CORS block hanya mencegah browser baca response, bukan block request
-    fetch(FLOW2_URL, {
+    try {
+
+    const res = await fetch(TARGET_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
       body: body
-    }).catch(() => {
-      // Abaikan CORS/network error - flow tetap jalan di server
     });
 
-    // Tampilkan sukses setelah 2.5 detik
-    // (tidak perlu tunggu response dari Power Automate)
-    setTimeout(showSuccess, 2500);
+    // Jika sudah pernah diproses
+    if (res.status === 409) {
+      document.getElementById('already-name').textContent = employee_name;
+      showState('state-already');
+      return;
+    }
+
+    // Jika berhasil approve / decline
+    showSuccess();
+
+  } catch (error) {
+
+    console.error("Flow error:", error);
+
+    // Jika ada error (misalnya CORS), tetap tampilkan sukses
+    // karena Power Automate tetap jalan di server
+    showSuccess();
+  }
   }
 
   submitToFlow();
